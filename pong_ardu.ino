@@ -21,6 +21,20 @@ void setup() {
 
 }
 
+void potiControl(int value){
+  if(value <= 0 && value <= 93)
+  else if(value <= 94 && value <= 186)
+  else if(value <= 187 && value <= 279)
+  else if(value <= 280 && value <= 372)
+  else if(value <= 373 && value <= 465)
+  else if(value <= 466 && value <= 558)
+  else if(value <= 559 && value <= 651)
+  else if(value <= 652 && value <= 744)
+  else if(value <= 745 && value <= 837)
+  else if(value <= 838 && value <= 930)
+  else if(value <= 931 && value <= 1023)
+}
+
 void loop() {
   // put your main code here, to run repeatedly:
 
@@ -31,4 +45,3 @@ void loop() {
 
 
   }
-}
