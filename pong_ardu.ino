@@ -21,25 +21,91 @@ void setup() {
 
 }
 
-void potiControl(int value){
-  if(value <= 0 && value <= 93)
-  else if(value <= 94 && value <= 186)
-  else if(value <= 187 && value <= 279)
-  else if(value <= 280 && value <= 372)
-  else if(value <= 373 && value <= 465)
-  else if(value <= 466 && value <= 558)
-  else if(value <= 559 && value <= 651)
-  else if(value <= 652 && value <= 744)
-  else if(value <= 745 && value <= 837)
-  else if(value <= 838 && value <= 930)
-  else if(value <= 931 && value <= 1023)
+void clearColumn(int column){
+  for(i=3, i<=15, i++){
+    gamearea[i][column]= false;
+  }
 }
+
+void potiControl(int value ,int column){
+  if(value <= 0 && value <= 93){
+    clearColumn;
+    gamearea[15][column]=true;
+    gamearea[14][column]=true;
+    gamearea[13][column]=true;
+  }
+  else if(value <= 94 && value <= 186){
+    clearColumn;
+    gamearea[14][column]=true;
+    gamearea[13][column]=true;
+    gamearea[12][column]=true;
+  }
+  else if(value <= 187 && value <= 279){
+    clearColumn;
+    gamearea[13][column]=true;
+    gamearea[12][column]=true;
+    gamearea[11][column]=true;
+  }
+  else if(value <= 280 && value <= 372){
+    clearColumn;
+    gamearea[12][column]=true;
+    gamearea[11][column]=true;
+    gamearea[10][column]=true;
+  }
+  else if(value <= 373 && value <= 465){
+    clearColumn;
+    gamearea[11][column]=true;
+    gamearea[10][column]=true;
+    gamearea[9][column]=true;
+  }
+  else if(value <= 466 && value <= 558){
+    clearColumn;
+    gamearea[10][column]=true;
+    gamearea[9][column]=true;
+    gamearea[8][column]=true;
+  }
+  else if(value <= 559 && value <= 651){
+    clearColumn;
+    gamearea[9][column]=true;
+    gamearea[8][column]=true;
+    gamearea[7][column]=true;
+  }
+  else if(value <= 652 && value <= 744){
+    clearColumn;
+    gamearea[8][column]=true;
+    gamearea[7][column]=true;
+    gamearea[6][column]=true;
+  }
+  else if(value <= 745 && value <= 837){
+    clearColumn;
+    gamearea[7][column]=true;
+    gamearea[6][column]=true;
+    gamearea[5][column]=true;
+  }
+  else if(value <= 838 && value <= 930){
+    clearColumn;
+    gamearea[6][column]=true;
+    gamearea[5][column]=true;
+    gamearea[4][column]=true;
+  }
+  else if(value <= 931 && value <= 1023){
+    clearColumn;
+    gamearea[5][column]=true;
+    gamearea[4][column]=true;
+    gamearea[3][column]=true;
+  }
+}
+
+
 
 void loop() {
   // put your main code here, to run repeatedly:
 
   potVal1 = analogRead(potPinP1ay1);
   potVal2 = analogRead(potPinP1ay2);
+  potiControl(potVal1, 1);
+  potiControl(potVal2, 2);
+
 
 
 
