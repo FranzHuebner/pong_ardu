@@ -8,12 +8,19 @@
 
 #include "max7221lib.h"
 
+byte tett[4]= {B0,B0,B0,B1};
+
 void setup() {
-  // put your setup code here, to run once:
+
+SPI.begin();
 startSetup();
+// put your setup code here, to run once:
+set_reg_shutdownmode(false);
+
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-
+write_SPI_ALL(OPCODE_DIGIT0,tett);
+set_reg_displaytest(false);
+delay(1000);
 }

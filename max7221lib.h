@@ -75,18 +75,19 @@ void SPI_transfer(int address, byte opcode, byte data){
 void write_SPI_ALL(byte opcode,byte data[DEVICECOUNT]){
 
   //enable transaction
-  SPI.beginTransaction(max_Settings);
+SPI.beginTransaction(max_Settings);
   //set cs to low
-  digitalWrite(SPI_CS,LOW);
-
+  //digitalWrite(SPI_CS,LOW);
+digitalWrite(SPI_CS,LOW);
   //loop the chain
-  for(int c=0;c<=DEVICECOUNT;c++){
+  for(int c=0;c<DEVICECOUNT;c++){
     SPI.transfer(opcode);
     SPI.transfer(data[c]);
   }
 
-//reset SPI_CS
 digitalWrite(SPI_CS,HIGH);
+//reset SPI_CS
+//digitalWrite(SPI_CS,HIGH);
 
 //END transaction
 SPI.endTransaction();
@@ -357,8 +358,8 @@ void startSetup(){
 //always set cs to out or arduino will interact as slave
 pinMode(SPI_CS,OUTPUT);
 
-set_reg_decodemode(false);
 set_reg_displaytest(false);
+set_reg_decodemode(false);
 set_reg_scanlimit(7);
 set_reg_intensity(10);
 
