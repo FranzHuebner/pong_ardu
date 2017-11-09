@@ -12,7 +12,6 @@
 #define max7221lib_h
 
 #include <SPI.h>
-#include "LedControl.h"
 
 #if (ARDUINO >= 100)
 #include <Arduino.h>
@@ -26,54 +25,46 @@
 //numer of casceded devices
 #define DEVICECOUNT 4
 
-#define OPCODE_NOOP   0        //0x00
-#define OPCODE_DIGIT0 1        //0x01
-#define OPCODE_DIGIT1 2        //0x02
-#define OPCODE_DIGIT2 3        //0x03
-#define OPCODE_DIGIT3 4        //0x04
-#define OPCODE_DIGIT4 5        //0x05
-#define OPCODE_DIGIT5 6        //0x06
-#define OPCODE_DIGIT6 7        //0x07
-#define OPCODE_DIGIT7 8        //0x08
-#define OPCODE_DECODEMODE  9   //0x09
-#define OPCODE_INTENSITY   10  //0x0a
-#define OPCODE_SCANLIMIT   11  //0x0b
-#define OPCODE_shutDown    12  //0x0c
-#define OPCODE_DISPLAYTEST 15  //0x0f
+#define OPCODE_NOOP   B0            //0
+#define OPCODE_DIGIT0 B1            //1
+#define OPCODE_DIGIT1 B10           //2
+#define OPCODE_DIGIT2 B11           //3
+#define OPCODE_DIGIT3 B100          //4
+#define OPCODE_DIGIT4 B101          //5
+#define OPCODE_DIGIT5 B110          //6
+#define OPCODE_DIGIT6 B111          //7
+#define OPCODE_DIGIT7 B1000         //8
+#define OPCODE_DECODEMODE  B1001    //9
+#define OPCODE_INTENSITY   B1010    //10
+#define OPCODE_SCANLIMIT   B1011    //11
+#define OPCODE_shutDown    B1100    //12
+#define OPCODE_DISPLAYTEST B1111    //15
 
 //Define Ports
-#define SPI_CS  10 //Slave select
-#define SPI_MOSI 11 // DataIN
-#define SPI_CLK 13 //clock
-
-//data s
-//2*4 data
-byte fullData[8];
-
-//always set cs to out or arduino will interact as slave
-pinMode(SPI_CS,OUTPUT);
+#define SPI_CS  10                  //Slave select
+#define SPI_MOSI 11                 // DataIN
+#define SPI_CLK 13                  //clock
 
 //settings for SPI
 SPISettings max_Settings(8000000,MSBFIRST,SPI_MODE0);
 
 //send to one matrix else will be nooped out
-void SPI_transfer(int address, int opcode, byte data){
+void SPI_transfer(int address, byte opcode, byte data){
 
-  byte b_opcode = byte(opcode),
  //enable transaction
   SPI.beginTransaction(max_Settings);
   //ss to low to send data
   digitalWrite(SPI_CS,LOW);
 
+  SPI.transfer(opcode);
+  SPI.transfer(data);
+
   if(address > 1){
-    for(i=1;i<=address;i++){
-      SPI.transfer(byte(OPCODE_NOOP));
-      SPI.transfer(byte(OPCODE_NOOP));
+    for(int i=1;i<=address;i++){
+      SPI.transfer(OPCODE_NOOP);
+      SPI.transfer(OPCODE_NOOP);
     }
   }
-
-  SPI.transfer(b_opcode);
-  SPI.transfer(data);
 
   digitalWrite(SPI_CS,HIGH);
   SPI.endTransaction();
@@ -81,31 +72,297 @@ void SPI_transfer(int address, int opcode, byte data){
 }
 
 //write the same opcode + byte array to chain
-void write_SPI_ALL(int opcode,byte[4] data){
+void write_SPI_ALL(byte opcode,byte data[DEVICECOUNT]){
 
-  //transfer int to byte
-  byte b_opcode = byte(opcode),
   //enable transaction
   SPI.beginTransaction(max_Settings);
   //set cs to low
   digitalWrite(SPI_CS,LOW);
 
   //loop the chain
-  for(c=0;c<=DEVICECOUNT;c++){
-    spi.transfer(b_opcode);
-    spi.transfer(data[c]);
+  for(int c=0;c<=DEVICECOUNT;c++){
+    SPI.transfer(opcode);
+    SPI.transfer(data[c]);
   }
 
 //reset SPI_CS
 digitalWrite(SPI_CS,HIGH);
 
+//END transaction
 SPI.endTransaction();
 
 }
 
-//set whole reg
+
+//set set true to decode      format: 11111111
+// set false for no decoding  format: 00000000
 void set_reg_decodemode(boolean b){
 
+//check set
+if(b){
+
+  byte c[DEVICECOUNT];
+
+  for(int f=0;f<DEVICECOUNT;f++){
+    c[f]= B11111111; //true
+  }
+
+//opcode -- data
+write_SPI_ALL(OPCODE_DECODEMODE,c); // true
+}else{
+
+  byte d[DEVICECOUNT];
+
+  for(int f=0;f<DEVICECOUNT;f++){
+    d[f]= B0; //false
+  }
+
+write_SPI_ALL(OPCODE_DECODEMODE,d); //false
 }
+
+}
+
+//set true for shutdown           format: XXXXXXX0
+//set false for normal operation  format: XXXXXXX1
+void set_reg_shutdownmode(boolean b){
+
+if(b){
+
+  byte c[DEVICECOUNT];
+
+  for(int f=0;f<DEVICECOUNT;f++){
+    c[f]= B0;
+  }
+
+write_SPI_ALL(OPCODE_shutDown,c); // true
+
+}else{
+//byte sparen durch only c
+  byte d[DEVICECOUNT];
+
+  for(int f=0;f<DEVICECOUNT;f++){
+    d[f]= B11111111;  //false
+  }
+
+write_SPI_ALL(OPCODE_shutDown,d); //false
+}
+}
+
+//set value from 0 to 15
+void set_reg_intensity(int inp){
+
+//error handling
+if ((inp<0)||(inp>15)){
+  return;
+}
+
+byte c[DEVICECOUNT];
+
+switch (inp){
+  case 0:
+  for(int f=0;f<DEVICECOUNT;f++){
+      c[f]= B0  ;
+    }
+    break;
+
+  case 1:
+  for(int f=0;f<DEVICECOUNT;f++){
+      c[f]= B1  ;
+    }
+    break;
+
+    case 2:
+    for(int f=0;f<DEVICECOUNT;f++){
+        c[f]= B10;
+      }
+      break;
+
+  case 3:
+  for(int f=0;f<DEVICECOUNT;f++){
+          c[f]= B11;
+  }
+  break;
+
+  case 4:
+  for(int f=0;f<DEVICECOUNT;f++){
+          c[f]= B100;
+  }
+  break;
+//s
+  case 5:
+  for(int f=0;f<DEVICECOUNT;f++){
+          c[f]= B101;
+  }
+  break;
+
+  case 6:
+  for(int f=0;f<DEVICECOUNT;f++){
+          c[f]= B110;
+  }
+  break;
+
+  case 7:
+  for(int f=0;f<DEVICECOUNT;f++){
+          c[f]= B111;
+  }
+  break;
+
+  case 8:
+  for(int f=0;f<DEVICECOUNT;f++){
+          c[f]= B1000;
+  }
+  break;
+
+  case 9:
+  for(int f=0;f<DEVICECOUNT;f++){
+          c[f]= B1001;
+  }
+  break;
+
+  case 10:
+  for(int f=0;f<DEVICECOUNT;f++){
+          c[f]= B1010;
+  }
+  break;
+
+  case 11:
+  for(int f=0;f<DEVICECOUNT;f++){
+          c[f]= B1011;
+  }
+  break;
+
+  case 12:
+  for(int f=0;f<DEVICECOUNT;f++){
+          c[f]= B1100;
+  }
+  break;
+
+  case 13:
+  for(int f=0;f<DEVICECOUNT;f++){
+          c[f]= B1101;
+  }
+  break;
+
+  case 14:
+  for(int f=0;f<DEVICECOUNT;f++){
+          c[f]= B1110;
+  }
+  break;
+
+  case 15:
+  for(int f=0;f<DEVICECOUNT;f++){
+          c[f]= B1111;
+  }
+  break;
+}
+
+write_SPI_ALL(OPCODE_INTENSITY,c);
+
+}
+
+//scanlimit
+
+//set for min scanlimit      format: XXXXX000
+//set max scanlimit          format: XXXXX111
+
+void set_reg_scanlimit(int input){
+
+byte c[DEVICECOUNT];
+
+switch (input){
+  case 0:
+  for(int f=0;f<DEVICECOUNT;f++){
+      c[f]= B0;
+    }
+    break;
+
+    case 1:
+    for(int f=0;f<DEVICECOUNT;f++){
+        c[f]= B1;
+      }
+      break;
+
+      case 2:
+      for(int f=0;f<DEVICECOUNT;f++){
+          c[f]= B10;
+        }
+        break;
+
+      case 3:
+      for(int f=0;f<DEVICECOUNT;f++){
+          c[f]= B11;
+      }
+        break;
+
+      case 4:
+      for(int f=0;f<DEVICECOUNT;f++){
+          c[f]= B100;
+      }
+        break;
+
+        case 5:
+        for(int f=0;f<DEVICECOUNT;f++){
+            c[f]= B101;
+          }
+          break;
+
+          case 6:
+          for(int f=0;f<DEVICECOUNT;f++){
+              c[f]= B110;
+            }
+            break;
+
+          case 7:
+          for(int f=0;f<DEVICECOUNT;f++){
+              c[f]= B111;
+          }
+          break;
+
+write_SPI_ALL(OPCODE_SCANLIMIT,c);
+
+}
+
+}
+
+//displaytest
+//set true for displaytest           format: XXXXXXX1
+//set false for normal operation     format: XXXXXXX0
+void set_reg_displaytest(boolean b){
+
+if(b){
+
+  byte c[DEVICECOUNT];
+
+  for(int f=0;f<DEVICECOUNT;f++){
+    c[f]= B11111111;
+  }
+
+write_SPI_ALL(OPCODE_DISPLAYTEST,c); // true
+
+}else{
+
+  byte d[DEVICECOUNT];
+
+  for(int f=0;f<DEVICECOUNT;f++){
+    d[f]= B0;  //false
+  }
+
+write_SPI_ALL(OPCODE_DISPLAYTEST,d); //false
+}
+}
+
+//startup
+void startSetup(){
+
+//always set cs to out or arduino will interact as slave
+pinMode(SPI_CS,OUTPUT);
+
+set_reg_decodemode(false);
+set_reg_displaytest(false);
+set_reg_scanlimit(7);
+set_reg_intensity(10);
+
+}
+
 
 #endif	//max7221lib.h

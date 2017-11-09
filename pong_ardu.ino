@@ -6,9 +6,11 @@
  *web:
 */
 
+#include "max7221lib.h"
+
 void setup() {
   // put your setup code here, to run once:
-
+startSetup();
 }
 
 void loop() {
