@@ -11,12 +11,27 @@ int potVal1 = 0;          //store the value of player 1s poti
 int potVal2 = 0;          //store the value of player 2s poti
 boolean gamearea[16][16];
 
+struct ball
+{
+ int speedx;
+ int speedy;
+ int old_x;
+ int old_y;
+ int new_x;
+ int new_y;
+}pongBall;
+
+
 void setup() {
-  for(int horiz = 0; horiz <= 8; horiz++){      //horizontral iterrieren
-      for(int vert =0; vert <= 8; vert++){
-        gamearea[horiz][vert]= false;
-      }
-  }
+//  for(int horiz = 0; horiz <= 8; horiz++){      //horizontral iterrieren
+//      for(int vert =0; vert <= 8; vert++){
+//        gamearea[horiz][vert]= false;
+//  }
+  clearGamearea(1)
+  pongBall.new_x = 10;
+  pongBall.new_y = 7;
+  pongBall.speedx = 1;
+  pongBall.speedy = 0;
 }
 
 void clearColumn(int column){
@@ -29,8 +44,8 @@ void clearColumn(int column){
 void clearGamearea(int area){
   int i;
   switch(area){
-    case 1: i=0;                
-    case 2: i=3; 
+    case 1: i=0;
+    case 2: i=3;
   }
   for(int i=0; i<=15; i++){
     for(int j=0; j<=15; j++){
@@ -39,14 +54,24 @@ void clearGamearea(int area){
   }
 }
 
+void moveBall(){
+  pongBall.old_x = pongBall.new_x;
+  pongBall.old_y = pongBall.new_y;
+  pongBall.new_x = pongBall.new_x + pongBall.speedx;
+  pongBall.new_y = pongBall.new_y + pongBall.speedy;
+  if(pongBall.new_y < 3 ) pongBall.speedy = (pongBall.speedy)*-1;     //colision with top
+  if(pongBall.new_y > 15 ) pongBall.speedy = (pongBall.speedy)*-1;    //colision with bottom
+  gamearea[pongBall.new_x][pongBall.new_y] = true;                    //Draw new ball
+  gamearea[pongBall.old_x][pongBall.old_y] = false;                   //Draw old ball
+}
 
 void winner(int Player){
-  clearGamearea(2);  
+  clearGamearea(2);
   switch(Player){
       case 1: gamearea[15][0];
       case 2: gamearea[15][15];
   }
-  
+
 }
 
 void potiControl(int value ,int column){
@@ -133,13 +158,12 @@ void AddPointScoreboard(int Player){
              }
             if(gamearea[0][6]){
             winner(2);
-        
+            }
+          }
+        }
       }
     }
-   } 
-  }
-  }
-}
+ }
 
 
 void loop() {
@@ -149,5 +173,6 @@ void loop() {
   potVal2 = analogRead(potPinP1ay2);
   potiControl(potVal1, 1);
   potiControl(potVal2, 2);
+  moveBall();
 
   }
