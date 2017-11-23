@@ -283,7 +283,7 @@ void loop() {
 	checkReactCollision();
 	if(ballPeriod){
 		moveBall();
-	}	
+	}
 	checkMakeAPoint();
 	gameAreaTransfer(gamearea);
 	if (endOfGame) {
@@ -291,6 +291,5 @@ void loop() {
 		endOfGame = false;
 		resetScoreboard();
 	}
-	delay(400);
-
+	
 }
