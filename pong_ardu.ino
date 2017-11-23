@@ -7,6 +7,7 @@
 */
 
 #include "max7221lib.h"
+#include "TimerOne"
 
 int potPinP1ay1 = A1;      //input pin for player 1s potentiometer
 int potPinP1ay2 = A2;      //input pin for player 2s potentiometer
@@ -14,6 +15,7 @@ int potVal1 = 0;          //store the value of player 1s poti
 int potVal2 = 0;          //store the value of player 2s poti
 boolean gamearea[16][16]; //Array for the gamearea
 boolean endOfGame = false;      //flag for the end of game state
+boolean ballPeriod;					//boolean wich is set by a timer
 
 struct ball               //struct for the ball
 {
@@ -51,6 +53,13 @@ void setup() {
 	batPlay1.column = 1;
 	batPlay2.column = 14;
 
+	Timer1.initialize(500000);         // initialize the timer for the ball movement with a 1/2 second period
+  Timer1.attachInterrupt(callback);
+
+}
+
+void setBallPeriod(){
+	ballPeriod=true;
 }
 
 // function to clear one collumn in the matrix
@@ -272,7 +281,9 @@ void loop() {
 	potiControl(potVal1, 1);
 	potiControl(potVal2, 2);
 	checkReactCollision();
-	moveBall();
+	if(ballPeriod){
+		moveBall();
+	}	
 	checkMakeAPoint();
 	gameAreaTransfer(gamearea);
 	if (endOfGame) {
@@ -283,4 +294,3 @@ void loop() {
 	delay(400);
 
 }
-
