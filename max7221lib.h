@@ -357,7 +357,9 @@ write_SPI_ALL(OPCODE_DISPLAYTEST,c); //false
 }
 }
 
-
+//fake SPI - required after the reset of the matrix
+//normal SPI isn´t working so we just form an array and transfer it via shiftout
+//after resetting all registers it´s possible to use normal SPI
 void start_spi(int matrixnumber, volatile byte opcode, volatile byte data) {
 	
 	//create our neccessary variables
@@ -383,7 +385,9 @@ void start_spi(int matrixnumber, volatile byte opcode, volatile byte data) {
 	digitalWrite(SPI_CS, HIGH);
 }
 
-
+//startup the matrix to gain full usability via start_spi
+//not neccessary after just resetting the arduino
+//needed after full power loss of the matrix
 void startup_matrix() {
 
 	//set our pins to use everthing -> n. as SPI.begin();
@@ -540,4 +544,3 @@ void transfer_matrix(boolean inputMatrix[MATRIX_X][MATRIX_Y]){
 
 
   }
-
