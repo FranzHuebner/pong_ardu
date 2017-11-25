@@ -8,4 +8,4 @@ The Library which is used to transfer commands and interact with the matrix make
 
 Written by Richard Walter and Franz Hübner in 2017.
 
-Questions regarding the project can be forwarded in on the project page under Issus.
+Questions regarding the project can be forwarded on the project page under Issues.
