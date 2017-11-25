@@ -1,24 +1,27 @@
 /*
  *name: pong_ardu.ino
  *version: 1.0
- *description: Pong gamed based on the max7221lib.h, played on 4x64 led matrix with 4 max7221-ic's daisychained
+ *description: Pong-game based on our max7221lib.h, played on 4x64 led matrix with 4 max7221-ic's daisychained
  *authors: Richard Walter, Franz Huebner
  *web:https://github.com/FranzHuebner/pong_ardu
 */
 
+//include neccessary lib's for the game
 #include "max7221lib.h"
 #include "TimerOne.h"
 #include "time.h"
 
-int potPinP1ay1 = A1;      //input pin for player 1s potentiometer
-int potPinP1ay2 = A2;      //input pin for player 2s potentiometer
-int potVal1 = 0;          //store the value of player 1s poti
-int potVal2 = 0;          //store the value of player 2s poti
-boolean gamearea[16][16]; //Array for the gamearea
+//global vars
+int potPinP1ay1 = A1;			//input potentiometer pin for player 1 
+int potPinP1ay2 = A2;			//input potentiometer pin for player 2
+int potVal1 = 0;				//store the potentiometer value of player 1
+int potVal2 = 0;				//store the potentiometer value of player 2
+boolean gamearea[16][16];		//array for the gamearea
 boolean endOfGame = false;      //flag for the end of game state
-boolean ballPeriod;					//boolean wich is set by a timer
+boolean ballPeriod;				//timer boolean
 
-struct ball               //struct for the ball
+//struct for the ball
+struct ball               
 {
 	int speedx;
 	int speedy;
@@ -28,7 +31,8 @@ struct ball               //struct for the ball
 	int new_y;
 }pongBall;
 
-struct bat                //struct for the bats of the two Players
+//struct for the bats of the two players
+struct bat
 {
 	int column;
 	int topPos;
@@ -36,7 +40,7 @@ struct bat                //struct for the bats of the two Players
 	int botPos;
 }batPlay1, batPlay2;
 
-//set the upper and lower edge
+//set the upper/lower edge
 void setEdge(){
   for(int i=0; i<=15;i++){
     gamearea[i][1]=true;
@@ -44,90 +48,118 @@ void setEdge(){
   }
 }
 
-//clear the matrix, 1 for complete matrix / 2 for only playground
+//function to clear the game-matrix
+//usage: area = 1 for whole game-matrix
+//usage: area = 2 for playground without edges and scoreboard
 void clearGamearea(int area) {
+
   int a;
   switch (area) {
+  
   case 1: a = 0;
   case 2: a = 1;
+  
   }
+
   for (int i = 15; i >=0 ; i--) {
-    for (int j = 15; j >= a; j--) {
-      gamearea[i][j] = false;
+   
+	  for (int j = 15; j >= a; j--) {
+      
+		  gamearea[i][j] = false;
     }
   }
 }
 
-//Function that brings the ball at its init-position
+//function which is called after every goal and the beginning 
 void startAGame() {
-	clearGamearea(2);
-  int r = (rand() %2)*2-1;     //random start x
-  int s = (rand() %3)-1;     //random start y
-  pongBall.new_x = 8;
-	pongBall.new_y = 8;
-	pongBall.speedx = r;
-	pongBall.speedy = s;
-  setEdge();
+
+	clearGamearea(2);			//clear field
+				
+	int r = (rand() %2)*2-1;    //random start speed x
+	int s = (rand() %3)-1;		//random start speed y
+	int g = (rand() % 13) + 2;  //random y postion
+
+	pongBall.speedx = r;		//speed x
+	pongBall.speedy = s;		//speed y
+
+	pongBall.new_x = 8;			//init position (x)
+	pongBall.new_y = g;			//init position (y)
+
+	
+	setEdge();					//init edges
   }
 
-//setup function that runs first
+//setup function that runs first - arduino specific
 void setup() {
 
-  srand(time(NULL));
+	srand(time(NULL));						//init randomize()
   
-	startup_matrix();
-  clearGamearea(1);
-	startAGame();
-	batPlay1.column = 1;
-	batPlay2.column = 14;
+	startup_matrix();						//call library to ensure matrix is working
+	clearGamearea(1);						//clear whole game-matrix
+	
+	startAGame();							//set ball + speed and edges 
+	
+	batPlay1.column = 1;					//init bat of player one 
+	batPlay2.column = 14;					//init bat of player two
 
-	Timer1.initialize(200000);         // initialize the timer for the ball movement with a 0.2 second period
-  Timer1.attachInterrupt(setBallPeriod);
+	Timer1.initialize(200000);				//init the timer for the ball movement with a 0.2 second period
+	Timer1.attachInterrupt(setBallPeriod);	//attach intterupt to unsync ball and bat movement -> smoother gameplay
 
 }
 
-
+//set ball period to true
 void setBallPeriod(){
+
 	ballPeriod=true;
+
 }
 
 // function to clear one collumn in the matrix
 void clearColumn(int column) {
+	
 	for (int i = 2; i < 15; i++) {
+	
 		gamearea[column][i] = false;
+	
 	}
 }
 
-//collision Handler for the walls 
+//collision detection for the edges 
 void checkWallCollision(){
-  if (pongBall.new_y+pongBall.speedy <= 1){
-    pongBall.speedy = (pongBall.speedy)*-1;     //colision with top
-  }
-  if (pongBall.new_y+pongBall.speedy  >= 15){
-    pongBall.speedy = (pongBall.speedy)*-1;    //colision with bottom
-  }
+
+	//colision with top or bottom -> revert ball speed
+	if ((pongBall.new_y+pongBall.speedy <= 1 ) || (pongBall.new_y + pongBall.speedy >= 15)){
+		
+		pongBall.speedy = (pongBall.speedy)*-1; 
+  
+	}
+
 }
 
-
-
-//function wich move the ball with x and y coordinate with collision handler
+//function which moves the ball
 void moveBall() {
- 	pongBall.old_x = pongBall.new_x;
-	pongBall.old_y = pongBall.new_y;
-  //checkCorner();
-  checkReactCollision();
-  checkWallCollision();
-	pongBall.new_x = pongBall.new_x + pongBall.speedx;
-	pongBall.new_y = pongBall.new_y + pongBall.speedy;
-	checkWallCollision();
-	gamearea[pongBall.new_x][pongBall.new_y] = true;                    //Draw new ball
-	gamearea[pongBall.old_x][pongBall.old_y] = false;                   //Delete old ball
+ 	
+	pongBall.old_x = pongBall.new_x;						//set old x coordinates
+	pongBall.old_y = pongBall.new_y;						//set old y coordinates
+  
+	checkReactCollision();									//check for collision with player bats
+	checkWallCollision();									//check for collision with edges
+
+	pongBall.new_x = pongBall.new_x + pongBall.speedx;		//set new x speed
+	pongBall.new_y = pongBall.new_y + pongBall.speedy;		//set new y speed
+	
+	checkWallCollision();									//check for a second collision after ball is hit by bat and 1 pixel away from the edge		
+	
+	gamearea[pongBall.new_x][pongBall.new_y] = true;        //draw new ball
+	gamearea[pongBall.old_x][pongBall.old_y] = false;       //delete old ball
  
 }
 
-//print Winner on the side of the winning player
+//print winn on the side of the winning player
 void printWinner(int player){
-  switch (player) {
+
+//put the word win into the array
+switch (player) {
   case 1: 
     // W
     gamearea[0][0] = true;
@@ -286,26 +318,39 @@ void printWinner(int player){
     break;
   }
 }
-//function for the victory situation of one player
+
+//function which is called after one player won a round
+//usage: int 1 = player 1
+//usage: int 2 = player 2
 void winner(int Player) {
-  clearGamearea(1);
-  printWinner(Player);
-  endOfGame = true;
+
+	clearGamearea(1);			//clear whole field
+	printWinner(Player);		//print the word win
+	endOfGame = true;			//set end of game stat
+
 }
 
-//function to reset the scoreboard on top
+//function to reset the scoreboard on top of the field
 void resetScoreboard() {
+
 	for (int i = 0; i <= 15; i++) {
-		gamearea[i][0] = false;
+		
+		gamearea[i][0] = false;	//reset points
+	
 	}
+
 }
 
 //control the bats by a potentiometer
+//usage: int value = value which comes from analogRead
+//usage: int player = 1 for player 1 // 2 for player 2
 void potiControl(int value, int player) {
+
 	int top;        //top part of the bat
 	int mid;        //mid part of the bat
 	int bot;        //bottom part of the bat
-	int column;
+	int column;		//column where the bat is printed
+
 	if (player == 1) {
 		column = 1;
 	}
@@ -369,8 +414,8 @@ void potiControl(int value, int player) {
 		bot = 4;
 	}
 
+	clearColumn(column);		//clear column
 
-	clearColumn(column);
 	if (player == 1) {
 		batPlay1.topPos = top;
 		batPlay1.midPos = mid;
@@ -381,6 +426,8 @@ void potiControl(int value, int player) {
 		batPlay2.midPos = mid;
 		batPlay2.botPos = bot;
 	}
+
+	//print new bat position
 	gamearea[column][top] = true;
 	gamearea[column][mid] = true;
 	gamearea[column][bot] = true;
@@ -388,101 +435,139 @@ void potiControl(int value, int player) {
 
 //adds a point to the scoreboard and checks for a victory situation
 void AddPointScoreboard(int Player) {
+
 	if (Player == 1) {
+
 		for (int i = 0; i<7; i++) {
+			
 			if (!(gamearea[i][0])) {
-				gamearea[i][0] = true;
+				
+				gamearea[i][0] = true;	//print 1 point for player 1
 				break;
+			
 			}
 		}
+
 		if (gamearea[6][0]) {
-			winner(1);
+
+			winner(1);					//when the game area on postion [6][0] == true then player 1 wins
+		
 		}
 	}
 	else {
+		
 		for (int i = 15; i >= 9; i--) {
+			
 			if (!(gamearea[i][0])) {
-				gamearea[i][0] = true;
+				
+				gamearea[i][0] = true;	//print one point for player 2
 				break;
+			
 			}
 		}
+
 		if (gamearea[9][0]) {
-			winner(2);
+
+			winner(2);					//when the game area on postion [9][0] == true then player 2 wins
+		
 		}
 	}
 }
 
-//collison handler for the bats
+//collison detection for the bats
 void checkReactCollision() {
-  if (pongBall.new_x + pongBall.speedx == batPlay1.column && pongBall.new_y + pongBall.speedy == batPlay1.topPos) {     //Player 1 Top
-		pongBall.speedx = 1;
-		pongBall.speedy = -1;
-   }
-	else if (pongBall.new_x + pongBall.speedx == batPlay1.column && pongBall.new_y + pongBall.speedy == batPlay1.midPos) {   //Player 1 Mid
-		pongBall.speedx = 1;
-		pongBall.speedy = (pongBall.speedy)*-1;
-	}
-	else if (pongBall.new_x + pongBall.speedx == batPlay1.column && pongBall.new_y + pongBall.speedy == batPlay1.botPos) {   //Player 1 Bottom
-		pongBall.speedx = 1;
-		pongBall.speedy = 1;
-	}
-	else if (pongBall.new_x + pongBall.speedx == batPlay2.column && pongBall.new_y + pongBall.speedy == batPlay2.topPos) {   //Player 2 Top
-		pongBall.speedx = -1;
-		pongBall.speedy = -1;
-  }
-	else if (pongBall.new_x + pongBall.speedx == batPlay2.column && pongBall.new_y + pongBall.speedy == batPlay2.midPos) {   //Player 2 Mid
-		pongBall.speedx = -1;
-		pongBall.speedy = (pongBall.speedy)*-1;
-	}
-	else if (pongBall.new_x + pongBall.speedx == batPlay2.column && pongBall.new_y + pongBall.speedy == batPlay2.botPos) {   //Player 2 Bottom
-		pongBall.speedx = -1;
-		pongBall.speedy = 1;
-	}
 
+  if (pongBall.new_x + pongBall.speedx == batPlay1.column && pongBall.new_y + pongBall.speedy == batPlay1.topPos) {			//player 1 top
+	 
+	  pongBall.speedx = 1;
+	  pongBall.speedy = -1;
+
+  }
+	else if (pongBall.new_x + pongBall.speedx == batPlay1.column && pongBall.new_y + pongBall.speedy == batPlay1.midPos) {  //player 1 mid
+		
+		pongBall.speedx = 1;
+		pongBall.speedy = (pongBall.speedy)*-1;
+	
+	}
+	else if (pongBall.new_x + pongBall.speedx == batPlay1.column && pongBall.new_y + pongBall.speedy == batPlay1.botPos) {  //player 1 bottom
+		
+		pongBall.speedx = 1;
+		pongBall.speedy = 1;
+	
+	}
+	else if (pongBall.new_x + pongBall.speedx == batPlay2.column && pongBall.new_y + pongBall.speedy == batPlay2.topPos) {  //player 2 top
+		
+		pongBall.speedx = -1;
+		pongBall.speedy = -1;
+  
+	}
+	else if (pongBall.new_x + pongBall.speedx == batPlay2.column && pongBall.new_y + pongBall.speedy == batPlay2.midPos) {   //player 2 mid
+		
+		pongBall.speedx = -1;
+		pongBall.speedy = (pongBall.speedy)*-1;
+	
+	}
+	else if (pongBall.new_x + pongBall.speedx == batPlay2.column && pongBall.new_y + pongBall.speedy == batPlay2.botPos) {   //player 2 bottom
+		
+		pongBall.speedx = -1;
+		pongBall.speedy = 1;
+	
+	}
 }
 
-//check for the dismiss of the ball with the bat
+//check the bat column for dismissing the ball with the bat and give a point to the opponent
 void checkMakeAPoint() {
+
 	if (pongBall.new_x == batPlay1.column && pongBall.new_y != batPlay1.topPos && pongBall.new_y != batPlay1.midPos && pongBall.new_y != batPlay1.botPos) {
-		clearGamearea(2);
-		startAGame();
-		AddPointScoreboard(2);
+		
+		clearGamearea(2);			//clear only the game-area
+		startAGame();				//start new round
+		AddPointScoreboard(2);		//add point for player 2
 		
 	}
 	else if (pongBall.new_x == batPlay2.column && pongBall.new_y != batPlay2.topPos && pongBall.new_y != batPlay2.midPos && pongBall.new_y != batPlay2.botPos) {
-		clearGamearea(2);
-		startAGame();
-		AddPointScoreboard(1);
+		
+		clearGamearea(2);			//clear only the game-area
+		startAGame();				//start new round
+		AddPointScoreboard(1);		//add point for player 1
 		
 	}
 }
 
-//transfer the playground array to the LED matrix
+//transfer the playground array to the LED-matrix
 void gameAreaTransfer(boolean area[16][16]) {
 
-	transfer_matrix(area);
+	transfer_matrix(area); //library function to transfer the array
 
 }
 
-//loop function
+//loop function - arduino specific
 void loop() {
-
+	//get potentionmeter input
 	potVal1 = analogRead(potPinP1ay1);
 	potVal2 = analogRead(potPinP1ay2);
+	
+	//call function with the values
 	potiControl(potVal1, 1);
 	potiControl(potVal2, 2);
-	if(ballPeriod){
-    moveBall();
-    ballPeriod=false;
-  }
-	checkMakeAPoint();
-	gameAreaTransfer(gamearea);
-  if (endOfGame) {
-		delay(10000);
-		endOfGame = false;
-		resetScoreboard();
-    startAGame();
-    
-	}
 	
+	//check ball period and move ball if it is true
+	if(ballPeriod){
+		moveBall();
+		ballPeriod=false;
+	}
+	//check if someone scored a point
+	checkMakeAPoint();
+	//transfer the game-array to the matrix
+	gameAreaTransfer(gamearea);
+	
+	//check if game is over
+	if (endOfGame) {
+		//delay the proccess so you can see the winner
+		delay(10000);
+
+		endOfGame = false;	//reset end-of-game-state
+		resetScoreboard();	//reset points
+		startAGame();		//start new game
+	}
 }

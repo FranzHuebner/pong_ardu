@@ -50,7 +50,7 @@
 #define MATRIX_X 16
 #define MATRIX_Y 16
 
-//arrays for our startfunction to use shiftout
+//byte arrays for our startfunction to use shiftout
 byte matrixdata[16];
 byte status[64];
 
@@ -85,7 +85,7 @@ void SPI_transfer(int address, byte opcode, byte data){
 
 }
 
-//write the same opcode(register) and an byte array to the matrix
+//write the same opcodes(registers) and an byte array to the matrix
 void write_SPI_ALL(volatile byte opcode, volatile byte data[DEVICECOUNT]){
 
 	//see SPI standard
@@ -111,6 +111,7 @@ void write_SPI_ALL(volatile byte opcode, volatile byte data[DEVICECOUNT]){
 // set false for no decoding  format: 00000000
 void set_reg_decodemode(boolean b){
 
+//data array
 byte c[DEVICECOUNT];
 
 //check set
@@ -136,6 +137,7 @@ write_SPI_ALL(OPCODE_DECODEMODE,c); //false
 //set false for normal operation  format: XXXXXXX1
 void set_reg_shutdownmode(boolean b){
 
+//data array
 byte c[DEVICECOUNT];
 
 if(b){
@@ -164,26 +166,27 @@ if ((inp<0)||(inp>15)){
   return;
 }
 
+//data array
 byte c[DEVICECOUNT];
 
 switch (inp){
   case 0:
   for(int f=0;f<DEVICECOUNT;f++){
       c[f]= B0  ;
-    }
-    break;
+  }
+  break;
 
   case 1:
   for(int f=0;f<DEVICECOUNT;f++){
       c[f]= B1  ;
-    }
-    break;
+  }
+  break;
 
-    case 2:
-    for(int f=0;f<DEVICECOUNT;f++){
+  case 2:
+  for(int f=0;f<DEVICECOUNT;f++){
         c[f]= B10;
-      }
-      break;
+  }
+  break;
 
   case 3:
   for(int f=0;f<DEVICECOUNT;f++){
@@ -271,6 +274,7 @@ write_SPI_ALL(OPCODE_INTENSITY,c);
 //set max scanlimit          format: XXXXX111
 void set_reg_scanlimit(int input){
 
+//data array
 byte c[DEVICECOUNT];
 
 //errorhandling
@@ -279,53 +283,53 @@ if((input<0) || (input >7)){
 }
 
 switch (input){
-  case 0:
-  for(int f=0;f<DEVICECOUNT;f++){
-      c[f]= B0;
-    }
-    break;
-
-    case 1:
-    for(int f=0;f<DEVICECOUNT;f++){
-        c[f]= B1;
+      case 0:
+	  for(int f=0;f<DEVICECOUNT;f++){
+		  c[f]= B0;
       }
-      break;
+	  break;
+
+	  case 1:
+	  for(int f=0;f<DEVICECOUNT;f++){
+		  c[f]= B1;
+	  }
+	  break;
 
       case 2:
       for(int f=0;f<DEVICECOUNT;f++){
           c[f]= B10;
-        }
-        break;
+      }
+      break;
 
       case 3:
       for(int f=0;f<DEVICECOUNT;f++){
           c[f]= B11;
       }
-        break;
+      break;
 
       case 4:
       for(int f=0;f<DEVICECOUNT;f++){
           c[f]= B100;
       }
-        break;
+      break;
 
       case 5:
       for(int f=0;f<DEVICECOUNT;f++){
           c[f]= B101;
       }
-        break;
+      break;
 
       case 6:
       for(int f=0;f<DEVICECOUNT;f++){
           c[f]= B110;
       }
-        break;
+      break;
 
       case 7:
       for(int f=0;f<DEVICECOUNT;f++){
           c[f]= B111;
       }
-        break;
+      break;
 
 write_SPI_ALL(OPCODE_SCANLIMIT,c);
 
@@ -337,6 +341,7 @@ write_SPI_ALL(OPCODE_SCANLIMIT,c);
 //set false for normal operation     format: XXXXXXX0
 void set_reg_displaytest(boolean b){
 
+//data array
 byte c[DEVICECOUNT];
 
 if(b){
@@ -375,6 +380,7 @@ void start_spi(int matrixnumber, volatile byte opcode, volatile byte data) {
 	matrixdata[offset + 1] = opcode;
 	matrixdata[offset] = data;
 
+	//start the transfer
 	digitalWrite(SPI_CS, LOW);
 	
 	//shiftout our data
@@ -382,12 +388,13 @@ void start_spi(int matrixnumber, volatile byte opcode, volatile byte data) {
 		shiftOut(SPI_MOSI, SPI_CLK, MSBFIRST, matrixdata[i - 1]);
 	}
 
+	//end transfer
 	digitalWrite(SPI_CS, HIGH);
 }
 
 //startup the matrix to gain full usability via start_spi
 //not neccessary after just resetting the arduino
-//needed after full power loss of the matrix
+//neccessary after full power loss
 void startup_matrix() {
 
 	//set our pins to use everthing -> n. as SPI.begin();
@@ -419,8 +426,8 @@ void startup_matrix() {
 	}
 
 	//set the last parameters
-	set_reg_scanlimit(1);
-	set_reg_intensity(7);
+	set_reg_scanlimit(1); // one is enough for our project
+	set_reg_intensity(7); // medium intensity
 
 }
 
@@ -435,6 +442,7 @@ void clearMatrix(){
     cclear[f]= B0;
   }
 
+  //transfer data
   write_SPI_ALL(OPCODE_DIGIT0,cclear);
   write_SPI_ALL(OPCODE_DIGIT1,cclear);
   write_SPI_ALL(OPCODE_DIGIT2,cclear);
@@ -446,7 +454,7 @@ void clearMatrix(){
 
 }
 
-//function to transfer the whole field
+//function to transfer an 2 dim. array to the matrix
 void transfer_matrix(boolean inputMatrix[MATRIX_X][MATRIX_Y]){
 
 	//init opcode array
@@ -541,6 +549,4 @@ void transfer_matrix(boolean inputMatrix[MATRIX_X][MATRIX_Y]){
 		write_SPI_ALL(opcode_array[outer], darray);
 
 	}
-
-
   }
